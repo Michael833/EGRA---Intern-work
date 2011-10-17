@@ -163,9 +163,11 @@ capture confirm file `"Z:\Task 3 EGRA\Final Databases\Codebook for EGRA & EGMA.x
 				local word = subinstr("`word'","_"," ",.)
 				local quothlabel `"`quothlabel' `num' "`word'""'
 			}
+			label define `labelname' `quothlabel'
 		}
 	}
 	}
+
 }
 {/* Pre-cleaning housekeeping*/
 *Create a variable called placeholder to tell egrmaclean how to order each section
