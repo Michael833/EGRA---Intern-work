@@ -271,8 +271,10 @@ forvalues langnum = `langlength'(-1)1{
 			mata: st_local("mymac", varnames[`s',1])
 			mata: st_local("section", varnames[`s',2])
 			mata: st_local("seclab", varnames[`s',3])
-			order `lang'`mymac'*, a(placeholder)
-			
+			capture confirm variable `lang'`mymac'*
+				if !_rc {
+					order `lang'`mymac'*, a(placeholder)
+				}
 			* Recode '01' to standard '1'
 			forvalues i = 1/9 {
 				capture confirm variable `lang'`mymac'0`i'
