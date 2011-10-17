@@ -163,7 +163,7 @@ capture confirm file `"Z:\Task 3 EGRA\Final Databases\Codebook for EGRA & EGMA.x
 				local word = subinstr("`word'","_"," ",.)
 				local quothlabel `"`quothlabel' `num' "`word'""'
 			}
-			label define `labelname' `quothlabel'
+			label define `labelname' `quothlabel', replace 
 		}
 	}
 	}
