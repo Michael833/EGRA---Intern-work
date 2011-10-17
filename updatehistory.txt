@@ -1,0 +1,53 @@
+Updates and version changes.
+
+1.0	25Aug2011
+	. Package released with 5 .ado files:	egrmaclean, facwts, cfa, sigbar, asmean and
+				1 .sthlp file: 	egrmaclean
+
+1.1	26Aug2011
+	. egrmaclean: now uses improved score algorithm for dictation variables
+	. egrmaclean: now recodes 99=. and 8=0
+	. egrmaclean: now renpfixes common nonstandard codings like oral_read_word
+	. 2 new .sthlp files released: facwts, sigbar
+
+1.2	27Aug2011
+	. Programs set to version 11 for version control reasons
+	. egrmaclean: now, if necessary, destrings question variables
+
+1.3	28Aug2011
+	. egrmaclean: now imports demographic labels from "Z:\Task 3 EGRA\Final Databases\User\Alex\RTIdocs\egrmacodebook.csv"
+
+1.4	29Aug2011
+	. All graphing files now allow LEGendoptions and TWOway_options
+	. .sthlp files now reflect graph customization changes
+	. egrmaclean: fixed bug where variables went unlabeled
+	. egrmaclean: now allows spaces in labels
+
+1.5	30Aug2011
+	. asmean: now makes levels between benchmarks, insead of above benchmarks
+
+1.6	5Sep2011
+	. 2 new .ado file released: outtable, rtiupdate
+	. 3 new .sthlp file released: outtable, rtiupdate, rti
+
+1.7	16Sep2011
+	. egrmaclean: read_comp_score_pcnt80 now labeled
+	. egrmaclean: fixed bug that cleaned read comp before oral read
+	. egrmaclean: no longer rounds numbers
+	. rti_egrma github respository created
+	
+1.8 30Sep2011
+	. rtiupdate: fixed bug where package installed multipe times
+	. egrmaclean: fixed bug where egrmaclean tried to rename "01" variables that didn't exist
+
+1.9 1Oct2011
+	. egrmaclean: non-boolean error now accounts for dictation sections
+	. egrmaclean: new labels added, broken down into a few sections
+	. egrmaclean: now fixes some new renpfix errors
+	. egrmaclean: uses improved score algorithm for read_comp and list_comp and doesn't give errors for '2's
+
+2.0 16Oct2011
+	. egrmaclean overhauled. Code cleaned up and new features added, including:
+						Multiple language support
+						.xls codebook user interface
+	. outtable: now supports missing strata and strata with missing values

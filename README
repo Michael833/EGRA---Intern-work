@@ -1,0 +1,15 @@
+EGRMA package developed for RTI International
+	By Michael Costello, Alex Sax
+	Last update 16Oct2011
+
+The EGRMA package efficiently cleans and culls results from raw EGRA and EGMA databases. 
+
+Funtions included:
+	asmean
+	cfa (a pcf function - obsolete)
+	egrmaclean
+	facwts
+	outtable
+	rtiupdate
+	sigbar
+

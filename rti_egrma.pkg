@@ -1,0 +1,33 @@
+d `RTI_EGRMA' Package for cleaning and analyzing EGRMA
+
+d Distribution-date: 25Aug2011
+ 
+d Alex Sax, University of Maryland
+d (asax/contractor@rti.org)
+
+d RTI_EGRMA programs
+f asmean.ado
+f cfa.ado
+f egrmaclean.ado
+f egrmaclean.sthlp
+f facwts.ado
+f outtable.ado
+f outtable.sthlp
+f rti.sthlp
+f rtiupdate.ado
+f rtiupdate.sthlp
+f sigbar.ado
+f sigbar.sthlp
+
+d Programs by other authors
+f radar/radar.ado
+f radar/radar.sthlp
+f diff_in_diff/diff.ado
+f diff_in_diff/diff.sthlp
+f hotdeck/hotdeck.ado
+f hotdeck/hotdeck.sthlp
+
+f updatehistory.txt
+
+
+* End rti.pkg
