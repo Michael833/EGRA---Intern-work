@@ -5,7 +5,7 @@
 
 
 program define egrmaclean
-	syntax varlist , [READwords(numlist) LANGuages(str) MLEVels noUPdate write]
+	syntax varlist , [readWords(numlist) LANGuages(str) MLEVels noUPdate write]
 	version 11
 /*
 Table of Contents:
@@ -56,7 +56,7 @@ Table of Contents:
 if "`write'"!=""{
 	display "1. Goodies"
 }
-if "`readwords'"=="1 1 2 3 5" | "`readwords'"=="1 1 2 3 5 8"{
+if "`readWords'"=="1 1 2 3 5" | "`readWords'"=="1 1 2 3 5 8"{
 	di in red "IL FIBONACCI!"
 	di in green `"http://mathworld.wolfram.com/FibonacciNumber.html"'
 }
@@ -67,7 +67,7 @@ if "`write'"!=""{
 	display "2. Import labels, test sections, and summary variables from the codebook"
 	display ".	a. Declare empty matrices"
 }
-mata: demvars = ("","","",""\ ///
+mata: demographicInfo = ("","","",""\ ///
 			"","","",""\ ///
 			"","","",""\ ///
 			"","","",""\ ///
@@ -109,10 +109,10 @@ mata: demvars = ("","","",""\ ///
 			"","","",""\ ///
 			"","","",""\ ///
 			"","","","")
-mata: varnames = demvars
-mata: labmat = demvars
-mata: ssmat = demvars
-mata: langmat = demvars /*Use this in the pre-cleaning housekeeping section*/
+mata: testSectionInfo = demographicInfo
+mata: labelInfo = demographicInfo
+mata: superSummaryInfo = demographicInfo
+mata: langMatrix = demographicInfo /*Use this in the pre-cleaning housekeeping section*/
 }
 
 	{/*  b. Read in the codebook */
@@ -147,10 +147,10 @@ mata: langmat = demvars /*Use this in the pre-cleaning housekeeping section*/
 				local contents = DemographicVariables`i' in `j'
 				*If we want to drop contents of cell, preface it with "."
 				if substr("`contents'",1,1)!="."{
-					mata: demvars[`j',`i'] = `"`contents'"'
+					mata: demographicInfo[`j',`i'] = `"`contents'"'
 				}
 				else {
-					mata: demvars[`j',`i'] = ""
+					mata: demographicInfo[`j',`i'] = ""
 				}
 			}
 		}
@@ -162,10 +162,10 @@ mata: langmat = demvars /*Use this in the pre-cleaning housekeeping section*/
 				local contents = TestSection`i' in `j'
 				*If we want to drop contents of cell, preface it with "."
 				if substr("`contents'",1,1)!="."{
-					mata: varnames[`j',`i'] = `"`contents'"'
+					mata: testSectionInfo[`j',`i'] = `"`contents'"'
 				}
 				else {
-					mata: varnames[`j',`i'] = ""
+					mata: testSectionInfo[`j',`i'] = ""
 				}
 			}
 		}
@@ -177,10 +177,10 @@ mata: langmat = demvars /*Use this in the pre-cleaning housekeeping section*/
 				local contents = Label`i' in `j'
 				*If we want to drop contents of cell, preface it with "."
 				if substr("`contents'",1,1)!="."{
-					mata: labmat[`j',`i'] = `"`contents'"'
+					mata: labelInfo[`j',`i'] = `"`contents'"'
 				}
 				else {
-					mata: labmat[`j',`i'] = ""
+					mata: labelInfo[`j',`i'] = ""
 				}
 			}
 		}	
@@ -192,10 +192,10 @@ mata: langmat = demvars /*Use this in the pre-cleaning housekeeping section*/
 				local contents = Section`i' in `j'
 				*If we want to drop contents of cell, preface it with "."
 				if substr("`contents'",1,1)!="."{
-					mata: ssmat[`j',`i'] = `"`contents'"'
+					mata: superSummaryInfo[`j',`i'] = `"`contents'"'
 				}
 				else {
-					mata: ssmat[`j',`i'] = ""
+					mata: superSummaryInfo[`j',`i'] = ""
 				}
 			}
 		}	
@@ -207,20 +207,20 @@ mata: langmat = demvars /*Use this in the pre-cleaning housekeeping section*/
 		display "		charlie. Define label values from the codebook"
 	}
 	forvalues i=1/`labsections'{
-		mata: st_local("label", labmat[`i',2])
-		mata: st_local("labelname", labmat[`i',1])
+		mata: st_local("label", labelInfo[`i',2])
+		mata: st_local("labelName", labelInfo[`i',1])
 		if "`label'" != ""{
-			local quothlabel ""
-			local labellength = wordcount("`label'")/2
-			forvalues j=1/`labellength' {
+			local labelDefine ""
+			local labelLength = wordcount("`label'")/2
+			forvalues j=1/`labelLength' {
 				local k = 2*`j'
 				local o = 2*`j' - 1
 				local word : word `k' of `label'
 				local num : word `o' of `label'
 				local word = subinstr("`word'","_"," ",.)
-				local quothlabel `"`quothlabel' `num' "`word'""'
+				local labelDefine `"`labelDefine' `num' "`word'""'
 			}
-			label define `labelname' `quothlabel', replace 
+			label define `labelName' `labelDefine', replace 
 		}
 	}
 	}
@@ -246,30 +246,30 @@ mata: langmat = demvars /*Use this in the pre-cleaning housekeeping section*/
 	if "`write'"!=""{
 		display `".	b. Stuff the user-entered "reading words needed" into a matrix"'
 	}
-	if "`readwords'"!=""{
-		local numlength = wordcount("`readwords'")
+	if "`readWords'"!=""{
+		local readWordsLength = wordcount("`readWords'")
 
-		*length of the reading word requirement list = readwords
-		local readword ""
-		forvalues i = 1/`numlength' {
-			local testname : word `i' of `readwords'
-			local readword "`readword'`testname',"
+		*length of the reading word requirement list = readWords
+		local readWord ""
+		forvalues i = 1/`readWordsLength' {
+			local thisWord : word `i' of `readWords'
+			local readWord "`readWord'`thisWord',"
 		}
-		matrix input read_word_needed = (`readword'0)  /* 0 is a placeholder to fill the last element. */
+		matrix input readWordNeeded = (`readWord'0)  /* 0 is a placeholder to fill the last element. */
 	}
 	}
 	{/*  c.  Make a language matrix */
 	if "`write'"!=""{
 		display "	c. Make a string matrix containing all the languages in the test"
 	}
-	local langlength = 1 /*Even if the user doesn't specify additional languages, the test still has the main one */ 
+	local numberOfLanguages = 1 /*Even if the user doesn't specify additional languages, the test still has the main one */ 
 	if "`languages'"!=""{
 		*Determine how many languages there are and save them in a matrix
-		local langlength = 1 + wordcount("`languages'")
-		forvalues i = 1/`langlength' {
+		local numberOfLanguages = 1 + wordcount("`languages'")
+		forvalues i = 1/`numberOfLanguages' {
 			local j = `i'+1
-			local testname : word `i' of `languages'
-			mata: langmat[`j',1] = "`testname'"
+			local thisLanguage : word `i' of `languages'
+			mata: langMatrix[`j',1] = "`thisLanguage'"
 		}
 	}
 	}
@@ -279,8 +279,8 @@ mata: langmat = demvars /*Use this in the pre-cleaning housekeeping section*/
 	if "`write'"!=""{
 		display ".	d. Fix common renpfix errors"
 	}
-	forvalues langnum = 1/`langlength'{
-		mata: st_local("lang", langmat[`langnum',1])
+	forvalues langnum = 1/`numberOfLanguages'{
+		mata: st_local("lang", langMatrix[`langnum',1])
 		foreach j in "01" "1" {
 			capture confirm variable `lang'oral_read_word`j'
 				if !_rc{
@@ -311,7 +311,7 @@ mata: langmat = demvars /*Use this in the pre-cleaning housekeeping section*/
 	}
 	}
 {/*  4,5,6 are in the language loop */
-forvalues langnum = `langlength'(-1)1{
+forvalues langnum = `numberOfLanguages'(-1)1{
 	{/*  4. Main cleaning */
 		{/*  a. Housekeeping */
 		if "`write'"!=""{
@@ -321,7 +321,7 @@ forvalues langnum = `langlength'(-1)1{
 		order placeholder
 		
 		* Define language
-		mata: st_local("lang", langmat[`langnum',1])
+		mata: st_local("lang", langMatrix[`langnum',1])
 		di "`lang'"
 		}
 		{/*  b. Concepts of Text */
@@ -357,30 +357,30 @@ forvalues langnum = `langlength'(-1)1{
 				display ".		alpha. Determining if section exists and other preliminaries"
 			}
 			local tested = 0
-			mata: st_local("mymac", varnames[`s',1])
-			mata: st_local("section", varnames[`s',2])
-			mata: st_local("seclab", varnames[`s',3])
-			capture confirm variable `lang'`mymac'*
+			mata: st_local("currentSection", testSectionInfo[`s',1])
+			mata: st_local("section", testSectionInfo[`s',2])
+			mata: st_local("sectionValueLabelName", testSectionInfo[`s',3])
+			capture confirm variable `lang'`currentSection'*
 				if !_rc {
-					order `lang'`mymac'*, a(placeholder)
+					order `lang'`currentSection'*, a(placeholder)
 				}
 			* Recode '01' to standard '1'
 			forvalues i = 1/9 {
-				capture confirm variable `lang'`mymac'0`i'
+				capture confirm variable `lang'`currentSection'0`i'
 					if !_rc {
-						ren `lang'`mymac'0`i' `lang'`mymac'`i'
+						ren `lang'`currentSection'0`i' `lang'`currentSection'`i'
 					}
 				}
 				
 			* Find length of section using database variables
 			local length = 0
 			forvalues i = 1/150 {
-				capture confirm variable `lang'`mymac'`i'
+				capture confirm variable `lang'`currentSection'`i'
 				if !_rc {
 					local length = `i'
-					capture confirm string variable `lang'`mymac'`i'
+					capture confirm string variable `lang'`currentSection'`i'
 						if !_rc {
-							quietly: destring `lang'`mymac'`i', replace
+							quietly: destring `lang'`currentSection'`i', replace
 						}
 				}
 			}
@@ -395,17 +395,17 @@ forvalues langnum = `langlength'(-1)1{
 
 			}
 			forvalues i=1/`length' {
-				quietly: recode `lang'`mymac'`i' (9=.) (99=.) (8=0) (3=0) (-1=.) (11=1)
-				quietly: summarize(`lang'`mymac'`i')
+				quietly: recode `lang'`currentSection'`i' (9=.) (99=.) (8=0) (3=0) (-1=.) (11=1)
+				quietly: summarize(`lang'`currentSection'`i')
 		
 				* Just in case there are some 3's floating around, the program will let you know
-				if ("`mymac'" != "dict" & "`mymac'" != "invent_dict" & "`mymac'"!="read_comp" & "`mymac'"!="list_comp" & r(max) > 1 & r(max) !=.) | (r(min) < 0) {
+				if ("`sectionValueLabelName'" != "compdict" & r(max) > 1 & r(max) !=.) | (r(min) < 0) {
 					if `tested'==0 {
 						local check "`check' | `lang'`section'"
 						local check "`check' (`i')"
 						local tested = 1
 					}
-					else if ("`mymac'" == "dict" | "`mymac'" == "invent_dict" | "`mymac'"=="read_comp" | "`mymac'"=="list_comp") & (r(max) > 2 & r(max) !=.) | (r(min) < 0) { /* Special cases for dictation sections */
+					else if ("`sectionValueLabelName'" == "compdict") & (r(max) > 2 & r(max) !=.) | (r(min) < 0) { /* Special cases for dictation sections */
 						if `tested'==0 {
 							local check "`check' | `lang'`section'"
 							local check "`check' (`i')"
@@ -418,8 +418,8 @@ forvalues langnum = `langlength'(-1)1{
 				}
 				
 				*Apply labels
-				label variable `lang'`mymac'`i' "`lang'`section' `i'"
-					label values `lang'`mymac'`i' `seclab'
+				label variable `lang'`currentSection'`i' "`lang'`section' `i'"
+					label values `lang'`currentSection'`i' `sectionValueLabelName'
 			}
 			
 			}
@@ -427,7 +427,7 @@ forvalues langnum = `langlength'(-1)1{
 			if "`write'"!=""{
 				display ".			birch. Clean the component variables"
 			}
-			if "`mymac'"=="read_comp" & "`readwords'"!=""{
+			if "`currentSection'"=="read_comp" & "`readWords'"!=""{
 				local j=0
 				* Redo this just in case reading is done before oral */	
 				capture confirm variable `lang'oral_read01
@@ -458,13 +458,13 @@ forvalues langnum = `langlength'(-1)1{
 						order `lang'oral_read_attempted, a(`lang'oral_read_time_remain)
 					}
 				forvalues i=1/`length'{
-					local word_needed = read_word_needed[1,`i']
+					local word_needed = readWordNeeded[1,`i']
 					quietly: recode read_comp`i' (3=.) (2=.) (1=.) (0=.) if `lang'oral_read_attempted < `word_needed'
 				}
 			}
 			}
 				{/*  cedar. Make the summary variables*/
-					/*  apocalyptica. Special section for leveled sections, like add, sub, mult, div */ if ("`mymac'"=="add" | "`mymac'"=="sub" | "`mymac'"=="mult" | "`mymac'"=="div") & ///
+					/*  apocalyptica. Special section for leveled sections, like add, sub, mult, div */ if ("`currentSection'"=="add" | "`currentSection'"=="sub" | "`currentSection'"=="mult" | "`currentSection'"=="div") & ///
 																						(`length' > 10 & "`mlevels'" == "mlevels" & "`lang'"=="") { /*Alex, I'm not sure about this length statement */	
 
 					{/*  america. Section summary for level 1 variables*/
@@ -472,69 +472,69 @@ forvalues langnum = `langlength'(-1)1{
 							display ".				apocalyptica. Special section for leveled sections, like add, sub, mult, div"
 							display ".					america. Section summary for level 1 variables"
 						}
-						capture confirm variable l1`mymac'_score
+						capture confirm variable l1`currentSection'_score
 						if !_rc { 
-							drop l1`mymac'_score
+							drop l1`currentSection'_score
 						}
-						quietly: egen l1`mymac'_score=rowtotal(`mymac'1-`mymac'10), missing 
+						quietly: egen l1`currentSection'_score=rowtotal(`currentSection'1-`currentSection'10), missing 
 
-						capture confirm variable l1`mymac'_attempted
+						capture confirm variable l1`currentSection'_attempted
 						if !_rc {
-							drop l1`mymac'_attempted
+							drop l1`currentSection'_attempted
 						}
-						quietly: egen l1`mymac'_attempted=rownonmiss(`mymac'1-`mymac'10) 
+						quietly: egen l1`currentSection'_attempted=rownonmiss(`currentSection'1-`currentSection'10) 
 						
-						capture confirm variable l1`mymac'_score_pcnt
+						capture confirm variable l1`currentSection'_score_pcnt
 						if !_rc { 
-							drop l1`mymac'_score_pcnt
+							drop l1`currentSection'_score_pcnt
 						}
-						quietly: gen l1`mymac'_score_pcnt=l1`mymac'_score/10
-						quietly: summarize l1`mymac'_score_pcnt
+						quietly: gen l1`currentSection'_score_pcnt=l1`currentSection'_score/10
+						quietly: summarize l1`currentSection'_score_pcnt
 							if(r(max)>1 & r(max)<.) {
-								display in red "QC:l1`mymac'_score_pcnt is greater than 100%"
+								display in red "QC:l1`currentSection'_score_pcnt is greater than 100%"
 							}
 							if r(max)<1  {
-								display in red "QC:l1`mymac'_score_pcnt no student scored 100%"
+								display in red "QC:l1`currentSection'_score_pcnt no student scored 100%"
 							}
 					
-						capture confirm variable l1`mymac'_score_zero
+						capture confirm variable l1`currentSection'_score_zero
 						if !_rc { 
-								drop l1`mymac'_score_zero
+								drop l1`currentSection'_score_zero
 						}
-						quietly: gen l1`mymac'_score_zero= (l1`mymac'_score==0) if l1`mymac'_score<.
+						quietly: gen l1`currentSection'_score_zero= (l1`currentSection'_score==0) if l1`currentSection'_score<.
 					
-						capture confirm variable l1`mymac'_attempted_pcnt
+						capture confirm variable l1`currentSection'_attempted_pcnt
 						if !_rc { 
-							drop l1`mymac'_attempted_pcnt
+							drop l1`currentSection'_attempted_pcnt
 						}
-						quietly: gen l1`mymac'_attempted_pcnt=l1`mymac'_score/l1`mymac'_attempted 
+						quietly: gen l1`currentSection'_attempted_pcnt=l1`currentSection'_score/l1`currentSection'_attempted 
 					}
 					{/*  britain. Label and order level 1 variables */
 						if "`write'"!=""{
 							display ".					britain. Label and order level 1 variables"
 						}
 						*Label summary variables
-						label variable l1`mymac'_score "Total correct questions at the section end?"
-						label variable l1`mymac'_score_pcnt "Total percentage of all level 1 `section' questions correct at the section end?"
-						label variable l1`mymac'_score_zero "Proportion of students with zero level 1 `section' questions correct."
-						label values l1`mymac'_score_zero zeroscores
-						label variable l1`mymac'_attempted "Number of level 1 `section' questions that were attempted."
-						label variable l1`mymac'_attempted_pcnt "Percentage correct of level 1 `section' questions that were attempted."
+						label variable l1`currentSection'_score "Total correct questions at the section end?"
+						label variable l1`currentSection'_score_pcnt "Total percentage of all level 1 `section' questions correct at the section end?"
+						label variable l1`currentSection'_score_zero "Proportion of students with zero level 1 `section' questions correct."
+						label values l1`currentSection'_score_zero zeroscores
+						label variable l1`currentSection'_attempted "Number of level 1 `section' questions that were attempted."
+						label variable l1`currentSection'_attempted_pcnt "Percentage correct of level 1 `section' questions that were attempted."
 				
 						*Ordering variables 
-						capture confirm variable l1`mymac'_auto_stop
+						capture confirm variable l1`currentSection'_auto_stop
 						if !_rc { 
-							label variable l1`mymac'_auto_stop "Could the child not complete any level 1 `section' questions?"
-							label values l1`mymac'_auto_stop yesno
+							label variable l1`currentSection'_auto_stop "Could the child not complete any level 1 `section' questions?"
+							label values l1`currentSection'_auto_stop yesno
 						}
 						else {
-							capture confirm variable l1`mymac'_time_remain
+							capture confirm variable l1`currentSection'_time_remain
 							if !_rc { 
-								order `mymac'1-`mymac'10 l1`mymac'_score l1`mymac'_score_pcnt l1`mymac'_score_zero l1`mymac'_time_remain l1`mymac'_attempted l1`mymac'_attempted_pcnt, b(placeholder)
-								label variable l1`mymac'_time_remain "Time remaining when finished answering level 1 `section' questions?"
+								order `currentSection'1-`currentSection'10 l1`currentSection'_score l1`currentSection'_score_pcnt l1`currentSection'_score_zero l1`currentSection'_time_remain l1`currentSection'_attempted l1`currentSection'_attempted_pcnt, b(placeholder)
+								label variable l1`currentSection'_time_remain "Time remaining when finished answering level 1 `section' questions?"
 							}
 							else {
-								order `mymac'1-`mymac'10 l1`mymac'_score l1`mymac'_score_pcnt l1`mymac'_score_zero l1`mymac'_attempted l1`mymac'_attempted_pcnt, b(placeholder)
+								order `currentSection'1-`currentSection'10 l1`currentSection'_score l1`currentSection'_score_pcnt l1`currentSection'_score_zero l1`currentSection'_attempted l1`currentSection'_attempted_pcnt, b(placeholder)
 							}
 						}
 					}
@@ -542,75 +542,75 @@ forvalues langnum = `langlength'(-1)1{
 					if "`write'"!=""{
 							display ".					canada. Section summary for level 2 variables"
 					}
-					capture confirm variable l2`mymac'_score
+					capture confirm variable l2`currentSection'_score
 						if !_rc { 
-							drop l2`mymac'_score
+							drop l2`currentSection'_score
 						}
-						quietly: egen l2`mymac'_score=rowtotal(`mymac'11-`mymac'`length'), missing 
+						quietly: egen l2`currentSection'_score=rowtotal(`currentSection'11-`currentSection'`length'), missing 
 
-						capture confirm variable l2`mymac'_attempted
+						capture confirm variable l2`currentSection'_attempted
 						if !_rc {
-							drop l2`mymac'_attempted
+							drop l2`currentSection'_attempted
 						}
-						quietly: egen l2`mymac'_attempted=rownonmiss(`mymac'11-`mymac'`length') 
+						quietly: egen l2`currentSection'_attempted=rownonmiss(`currentSection'11-`currentSection'`length') 
 						
-						capture confirm variable l2`mymac'_score_pcnt
+						capture confirm variable l2`currentSection'_score_pcnt
 						if !_rc { 
-							drop l2`mymac'_score_pcnt
+							drop l2`currentSection'_score_pcnt
 						}
-						quietly: gen l2`mymac'_score_pcnt=l2`mymac'_score/`length'
-						quietly: summarize l2`mymac'_score_pcnt
+						quietly: gen l2`currentSection'_score_pcnt=l2`currentSection'_score/`length'
+						quietly: summarize l2`currentSection'_score_pcnt
 							if(r(max)>1 & r(max)<.) {
-								display in red "QC:l2`mymac'_score_pcnt is greater than 100%"
+								display in red "QC:l2`currentSection'_score_pcnt is greater than 100%"
 							}
 							if r(max)<1  {
-								display in red "QC:l2`mymac'_score_pcnt no student scored 100%"
+								display in red "QC:l2`currentSection'_score_pcnt no student scored 100%"
 							}
 					
-						capture confirm variable l2`mymac'_score_zero
+						capture confirm variable l2`currentSection'_score_zero
 						if !_rc { 
-							drop l2`mymac'_score_zero
+							drop l2`currentSection'_score_zero
 						}
-						quietly: gen l2`mymac'_score_zero= (l2`mymac'_score==0) if l2`mymac'_score<.
+						quietly: gen l2`currentSection'_score_zero= (l2`currentSection'_score==0) if l2`currentSection'_score<.
 				
-						capture confirm variable l2`mymac'_attempted_pcnt
+						capture confirm variable l2`currentSection'_attempted_pcnt
 						if !_rc { 
-							drop l2`mymac'_attempted_pcnt
+							drop l2`currentSection'_attempted_pcnt
 						}
-						quietly: gen l2`mymac'_attempted_pcnt=l2`mymac'_score/l2`mymac'_attempted 
+						quietly: gen l2`currentSection'_attempted_pcnt=l2`currentSection'_score/l2`currentSection'_attempted 
 					}
 					{/*  denmark. Label and order level 2 and overall variables*/
 						if "`write'"!=""{
 								display ".					denmark. Label and order level 2 and overall variables"
 						}	
 						*Label summary variables
-						label variable l2`mymac'_score "Total correct questions at the section end?"
-						label variable l2`mymac'_score_pcnt "Total percentage of all level 2`section' questions correct at the section end?"
-						label variable l2`mymac'_score_zero "Proportion of students with zero level 2 `section' questions correct."
-						label values l2`mymac'_score_zero zeroscores
-						label variable l2`mymac'_attempted "Number of level 2 `section' questions that were attempted."
-						label variable l2`mymac'_attempted_pcnt "Percentage correct of level 2 `section' questions that were attempted."
+						label variable l2`currentSection'_score "Total correct questions at the section end?"
+						label variable l2`currentSection'_score_pcnt "Total percentage of all level 2`section' questions correct at the section end?"
+						label variable l2`currentSection'_score_zero "Proportion of students with zero level 2 `section' questions correct."
+						label values l2`currentSection'_score_zero zeroscores
+						label variable l2`currentSection'_attempted "Number of level 2 `section' questions that were attempted."
+						label variable l2`currentSection'_attempted_pcnt "Percentage correct of level 2 `section' questions that were attempted."
 					
 						*Ordering variables 
-						capture confirm variable `mymac'_autostop
+						capture confirm variable `currentSection'_autostop
 						if !_rc {
-							ren `mymac'_autostop `mymac'_auto_stop
+							ren `currentSection'_autostop `currentSection'_auto_stop
 						}
-						capture confirm variable `mymac'_auto_stop
+						capture confirm variable `currentSection'_auto_stop
 						if !_rc { 
-							label variable `mymac'_auto_stop "Could the child not complete any level 2 `section' questions?"
-							label values `mymac'_auto_stop yesno
-							label variable `mymac'_time_remain "Time remaining when finished answering level 2 `section' questions?"
-							order `mymac'11-`mymac'`length' l2`mymac'_score l2`mymac'_score_pcnt l2`mymac'_score_zero `mymac'_time_remain `mymac'_auto_stop l2`mymac'_attempted l2`mymac'_attempted_pcnt, a(l1`mymac'_attempted_pcnt)
+							label variable `currentSection'_auto_stop "Could the child not complete any level 2 `section' questions?"
+							label values `currentSection'_auto_stop yesno
+							label variable `currentSection'_time_remain "Time remaining when finished answering level 2 `section' questions?"
+							order `currentSection'11-`currentSection'`length' l2`currentSection'_score l2`currentSection'_score_pcnt l2`currentSection'_score_zero `currentSection'_time_remain `currentSection'_auto_stop l2`currentSection'_attempted l2`currentSection'_attempted_pcnt, a(l1`currentSection'_attempted_pcnt)
 						}
 						else {
-							capture confirm variable `mymac'_time_remain
+							capture confirm variable `currentSection'_time_remain
 							if !_rc { 
-								order `mymac'11-`mymac'`length' l2`mymac'_score l2`mymac'_score_pcnt l2`mymac'_score_zero `mymac'_time_remain l2`mymac'_attempted l2`mymac'_attempted_pcnt, a(l1`mymac'_attempted_pcnt)
-								label variable `mymac'_time_remain "Time remaining when finished answering level 2 `section' questions?"
+								order `currentSection'11-`currentSection'`length' l2`currentSection'_score l2`currentSection'_score_pcnt l2`currentSection'_score_zero `currentSection'_time_remain l2`currentSection'_attempted l2`currentSection'_attempted_pcnt, a(l1`currentSection'_attempted_pcnt)
+								label variable `currentSection'_time_remain "Time remaining when finished answering level 2 `section' questions?"
 							}
 							else {
-								order `mymac'11-`mymac'`length' l2`mymac'_score l2`mymac'_score_pcnt l2`mymac'_score_zero l2`mymac'_attempted l2`mymac'_attempted_pcnt, a(l1`mymac'_attempted_pcnt)
+								order `currentSection'11-`currentSection'`length' l2`currentSection'_score l2`currentSection'_score_pcnt l2`currentSection'_score_zero l2`currentSection'_attempted l2`currentSection'_attempted_pcnt, a(l1`currentSection'_attempted_pcnt)
 							}
 						}
 					}
@@ -622,58 +622,58 @@ forvalues langnum = `langlength'(-1)1{
 							display ".					america. Generate section summary variables"
 						}
 						*Drop score if it already exists
-						capture confirm variable `lang'`mymac'_score
+						capture confirm variable `lang'`currentSection'_score
 						if !_rc { 
-							drop `lang'`mymac'_score
+							drop `lang'`currentSection'_score
 						}
 						*Special generation for dictation sections
-						if "`seclab'"=="compdict"{
-							quietly: egen `lang'`mymac'_score1 = anycount(`lang'`mymac'1-`lang'`mymac'`length'), v(1)
-							quietly: egen `lang'`mymac'_score2 = anycount(`lang'`mymac'1-`lang'`mymac'`length'), v(2)
-							quietly: gen `lang'`mymac'_score=`lang'`mymac'_score1+(`lang'`mymac'_score2)/2
-							drop `lang'`mymac'_score1 `lang'`mymac'_score2
+						if "`sectionValueLabelName'"=="compdict"{
+							quietly: egen `lang'`currentSection'_score1 = anycount(`lang'`currentSection'1-`lang'`currentSection'`length'), v(1)
+							quietly: egen `lang'`currentSection'_score2 = anycount(`lang'`currentSection'1-`lang'`currentSection'`length'), v(2)
+							quietly: gen `lang'`currentSection'_score=`lang'`currentSection'_score1+(`lang'`currentSection'_score2)/2
+							drop `lang'`currentSection'_score1 `lang'`currentSection'_score2
 							** If the section is missing, this should take the 0's returned by -anycount- and change them to missing.
-							quietly: recode `lang'`mymac'_score (0=.) if missing(`lang'`mymac'1-`lang'`mymac'`length') 
+							quietly: recode `lang'`currentSection'_score (0=.) if missing(`lang'`currentSection'1-`lang'`currentSection'`length') 
 						}
 						else{
-							quietly: egen `lang'`mymac'_score=rowtotal(`lang'`mymac'1-`lang'`mymac'`length'), missing 
+							quietly: egen `lang'`currentSection'_score=rowtotal(`lang'`currentSection'1-`lang'`currentSection'`length'), missing 
 						}
 						
 						*Attempted
-						capture confirm variable `lang'`mymac'_attempted
+						capture confirm variable `lang'`currentSection'_attempted
 						if !_rc {
-							drop `lang'`mymac'_attempted
+							drop `lang'`currentSection'_attempted
 						}
-						quietly: egen `lang'`mymac'_attempted=rownonmiss(`lang'`mymac'1-`lang'`mymac'`length') 
-						quietly: replace `lang'`mymac'_attempted=`length' if "`mymac'"=="list_comp"
+						quietly: egen `lang'`currentSection'_attempted=rownonmiss(`lang'`currentSection'1-`lang'`currentSection'`length') 
+						quietly: replace `lang'`currentSection'_attempted=`length' if "`currentSection'"=="list_comp"
 					
 						*Score pcnt
-						capture confirm variable `lang'`mymac'_score_pcnt
+						capture confirm variable `lang'`currentSection'_score_pcnt
 						if !_rc { 
-							drop `lang'`mymac'_score_pcnt
+							drop `lang'`currentSection'_score_pcnt
 						}
-						quietly: gen `lang'`mymac'_score_pcnt=`lang'`mymac'_score/`length'
-						quietly: summarize `lang'`mymac'_score_pcnt
+						quietly: gen `lang'`currentSection'_score_pcnt=`lang'`currentSection'_score/`length'
+						quietly: summarize `lang'`currentSection'_score_pcnt
 							if(r(max)>1 & r(max)<.) {
-								display in red "QC:`lang'`mymac'_score_pcnt is greater than 100%"
+								display in red "QC:`lang'`currentSection'_score_pcnt is greater than 100%"
 							}
 							if r(max)<1  {
-								display in red "QC:`lang'`mymac'_score_pcnt no student scored 100%"
+								display in red "QC:`lang'`currentSection'_score_pcnt no student scored 100%"
 							}
 					
 						*Zero Score
-						capture confirm variable `lang'`mymac'_score_zero
+						capture confirm variable `lang'`currentSection'_score_zero
 						if !_rc { 
-							drop `lang'`mymac'_score_zero
+							drop `lang'`currentSection'_score_zero
 						}
-						quietly: gen `lang'`mymac'_score_zero= (`lang'`mymac'_score==0) if `lang'`mymac'_score<.
+						quietly: gen `lang'`currentSection'_score_zero= (`lang'`currentSection'_score==0) if `lang'`currentSection'_score<.
 					
 						*Attempted percent
-						capture confirm variable `lang'`mymac'_attempted_pcnt
+						capture confirm variable `lang'`currentSection'_attempted_pcnt
 						if !_rc { 
-							drop `lang'`mymac'_attempted_pcnt
+							drop `lang'`currentSection'_attempted_pcnt
 						}
-						quietly: gen `lang'`mymac'_attempted_pcnt=`lang'`mymac'_score/`lang'`mymac'_attempted 
+						quietly: gen `lang'`currentSection'_attempted_pcnt=`lang'`currentSection'_score/`lang'`currentSection'_attempted 
 					}
 					
 					{/*  britain. Label and order variables*/ 
@@ -681,39 +681,39 @@ forvalues langnum = `langlength'(-1)1{
 							display ".					britain. Generate section summary variables"
 						}
 						*Label summary variables
-						label variable `lang'`mymac'_score "Total correct `lang'`section' questions."
-						label variable `lang'`mymac'_score_pcnt "Percentage of `lang'`section' questions correct."
-						label variable `lang'`mymac'_score_zero "Student scored zero on `lang'`section' section."
-						label values `mymac'_score_zero zeroscores
-						label variable `lang'`mymac'_attempted "Number of `lang'`section' questions attempted."
-						label variable `lang'`mymac'_attempted_pcnt "Percentage of attempted `lang'`section' questions correct."
+						label variable `lang'`currentSection'_score "Total correct `lang'`section' questions."
+						label variable `lang'`currentSection'_score_pcnt "Percentage of `lang'`section' questions correct."
+						label variable `lang'`currentSection'_score_zero "Student scored zero on `lang'`section' section."
+						label values `currentSection'_score_zero zeroscores
+						label variable `lang'`currentSection'_attempted "Number of `lang'`section' questions attempted."
+						label variable `lang'`currentSection'_attempted_pcnt "Percentage of attempted `lang'`section' questions correct."
 						
 						*Order
-						capture confirm variable `lang'`mymac'_autostop
+						capture confirm variable `lang'`currentSection'_autostop
 						if !_rc {
-							ren `lang'`mymac'_autostop `lang'`mymac'_auto_stop
+							ren `lang'`currentSection'_autostop `lang'`currentSection'_auto_stop
 						}
-						capture confirm variable `lang'`mymac'_auto_stop
+						capture confirm variable `lang'`currentSection'_auto_stop
 						if !_rc { 
-							label variable `lang'`mymac'_auto_stop "Could the child not complete any `lang'`section' questions?"
-							label values `lang'`mymac'_auto_stop yesno
-								capture confirm variable `lang'`mymac'_time_remain
+							label variable `lang'`currentSection'_auto_stop "Could the child not complete any `lang'`section' questions?"
+							label values `lang'`currentSection'_auto_stop yesno
+								capture confirm variable `lang'`currentSection'_time_remain
 							if !_rc { 
-								label variable `lang'`mymac'_time_remain "Time remaining when finished answering level 1 `lang'`section' questions?"
-								order `lang'`mymac'1-`lang'`mymac'`length' `lang'`mymac'_score `lang'`mymac'_score_pcnt `lang'`mymac'_score_zero `lang'`mymac'_time_remain `lang'`mymac'_auto_stop `lang'`mymac'_attempted `lang'`mymac'_attempted_pcnt, b(placeholder)
+								label variable `lang'`currentSection'_time_remain "Time remaining when finished answering level 1 `lang'`section' questions?"
+								order `lang'`currentSection'1-`lang'`currentSection'`length' `lang'`currentSection'_score `lang'`currentSection'_score_pcnt `lang'`currentSection'_score_zero `lang'`currentSection'_time_remain `lang'`currentSection'_auto_stop `lang'`currentSection'_attempted `lang'`currentSection'_attempted_pcnt, b(placeholder)
 							}
 							else{
-								order `lang'`mymac'1-`lang'`mymac'`length' `lang'`mymac'_score `lang'`mymac'_score_pcnt `lang'`mymac'_score_zero `lang'`mymac'_auto_stop `lang'`mymac'_attempted `lang'`mymac'_attempted_pcnt, b(placeholder)
+								order `lang'`currentSection'1-`lang'`currentSection'`length' `lang'`currentSection'_score `lang'`currentSection'_score_pcnt `lang'`currentSection'_score_zero `lang'`currentSection'_auto_stop `lang'`currentSection'_attempted `lang'`currentSection'_attempted_pcnt, b(placeholder)
 							}
 						}
 						else {
-							capture confirm variable `lang'`mymac'_time_remain
+							capture confirm variable `lang'`currentSection'_time_remain
 							if !_rc { 
-								order `lang'`mymac'1-`lang'`mymac'`length' `lang'`mymac'_score `lang'`mymac'_score_pcnt `lang'`mymac'_score_zero `lang'`mymac'_time_remain `lang'`mymac'_attempted `lang'`mymac'_attempted_pcnt, b(placeholder)
-								label variable `lang'`mymac'_time_remain "Time remaining when finished answering `lang'`section' questions?"
+								order `lang'`currentSection'1-`lang'`currentSection'`length' `lang'`currentSection'_score `lang'`currentSection'_score_pcnt `lang'`currentSection'_score_zero `lang'`currentSection'_time_remain `lang'`currentSection'_attempted `lang'`currentSection'_attempted_pcnt, b(placeholder)
+								label variable `lang'`currentSection'_time_remain "Time remaining when finished answering `lang'`section' questions?"
 							}
 							else {
-								order `lang'`mymac'1-`lang'`mymac'`length' `lang'`mymac'_score `lang'`mymac'_score_pcnt `lang'`mymac'_score_zero `lang'`mymac'_attempted `lang'`mymac'_attempted_pcnt, b(placeholder)
+								order `lang'`currentSection'1-`lang'`currentSection'`length' `lang'`currentSection'_score `lang'`currentSection'_score_pcnt `lang'`currentSection'_score_zero `lang'`currentSection'_attempted `lang'`currentSection'_attempted_pcnt, b(placeholder)
 							}
 						}
 					}
@@ -814,8 +814,8 @@ forvalues langnum = `langlength'(-1)1{
 			display ".	b. Order and label the super summary variables"
 	}
 	forvalues i =1(1)`sssections'{
-		mata: st_local("varname", ssmat[`i',1])
-		mata: st_local("varlab", ssmat[`i',2])
+		mata: st_local("varname", superSummaryInfo[`i',1])
+		mata: st_local("varlab", superSummaryInfo[`i',2])
 		capture confirm variable `lang'`varname'
 			if !_rc{
 				order `lang'`varname', b(placeholder)
@@ -832,9 +832,9 @@ forvalues langnum = `langlength'(-1)1{
 	order placeholder
 	
 	forvalues s = 1/`demsections' {
-		mata: st_local("name", demvars[`s',1])
-		mata: st_local("label", demvars[`s',3])
-		mata: st_local("valuelabel", demvars[`s',4])
+		mata: st_local("name", demographicInfo[`s',1])
+		mata: st_local("label", demographicInfo[`s',3])
+		mata: st_local("valuelabel", demographicInfo[`s',4])
 		capture confirm variable `lang'`name'
 			if !_rc {
 				label variable `lang'`name' "`label'"
