@@ -36,18 +36,29 @@ Updates and version changes.
 	. egrmaclean: no longer rounds numbers
 	. rti_egrma github respository created
 	
-1.8 30Sep2011
+1.8 	30Sep2011
 	. rtiupdate: fixed bug where package installed multipe times
 	. egrmaclean: fixed bug where egrmaclean tried to rename "01" variables that didn't exist
 
-1.9 1Oct2011
+1.9 	1Oct2011
 	. egrmaclean: non-boolean error now accounts for dictation sections
 	. egrmaclean: new labels added, broken down into a few sections
 	. egrmaclean: now fixes some new renpfix errors
 	. egrmaclean: uses improved score algorithm for read_comp and list_comp and doesn't give errors for '2's
 
-2.0 16Oct2011
+2.0 	16Oct2011
 	. egrmaclean overhauled. Code cleaned up and new features added, including:
 						Multiple language support
 						.xls codebook user interface
+	.egrmaclean: table of contents added.
 	. outtable: now supports missing strata and strata with missing values
+	. outtable: table of contents added.
+
+2.1 	4November2011
+	. egrmaclean: includes the following quality control checks:
+		1. If any _score_pcnt variable scores greater than 100% an error message will print.
+		2. If no observations have a _score_pcnt variable =100% a "possible" error message will print. 
+		3. If any fluency variable is greater than 150/per minute, than a "possible" error message will print.
+	. egrmaclean: All variable labels have been shortened to eliminate the "varable label truncated to 80 characters" message from printing.
+	. outtable: added -tstats- option to create a t-test statistic and p-value when comparing two subpopulations in -by- function.
+	. outtable: added -effects- option to calculate effect size between -over- groups(time peroids).

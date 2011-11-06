@@ -26,6 +26,8 @@ f diff_in_diff/diff.ado
 f diff_in_diff/diff.sthlp
 f hotdeck/hotdeck.ado
 f hotdeck/hotdeck.sthlp
+f cf3/cf3.ado
+f cf3/cf3.hlp
 
 f updatehistory.txt
 

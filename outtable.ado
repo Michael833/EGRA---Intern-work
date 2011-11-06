@@ -1,8 +1,22 @@
 program define outtable
-	syntax varlist, over(varname) by(varlist) to(str) [fileTYPe(str) SVY]
+	syntax varlist, over(varname) by(varlist) to(str) [TYPE(str) SVY]
 	version 11
 
-{/*Preliminary stuff*/
+/*
+Table of Contents:
+1. Creating the lengths of each -by- and -over- group, creating a matrix with the appropriate labels.
+	a. Find strata, then generate the subpopulations by which to calculate summary statistics.
+	b. Create blank dataset to store table in.
+2. Generate summary statistics for each subpopulation (mean, standard error, sample count).
+3. Compress the master database so we don't have 244 character strings
+4. Save the new summary table to either a .dta or a .csv file
+5. Clean up the variables we created
+*/
+	
+{/* 1. Preliminary stuff */
+if "`type'"!=".csv"{
+	local type = ".dta"
+}
 local namecount = wordcount("`by'")
 local varcount =  wordcount("`varlist'")
 
@@ -37,7 +51,7 @@ preserve
 	mata: levelvalues = (`levellist')
 restore
 
-*Find strata
+/* a. Find strata, then generate the subpopulations by which to calculate summary statistics. */
 preserve
 	local thisvar : word 1 of `varlist'
 	collapse `thisvar', by(`by')	
@@ -48,7 +62,7 @@ preserve
 	local stratacount = _N
 restore
 
-*Generate subpop variables
+* Generate subpop variables
 decode `over', gen(`over'2)
 forvalues i = 1/`levels' {
 	mata: st_local("name", levellabels[1,`i'])
@@ -56,10 +70,10 @@ forvalues i = 1/`levels' {
 }
 drop `over'2
 
-*Create blank dataset to store table in
+/* b. Create blank dataset to store table in. */
 preserve
 	keep `by'
-	quietly: gen str222 subtest = ""
+	quietly: gen str60 subtest = ""
 	quietly: keep if 0
 forvalues i = 1/`levels'{
 	mata: st_local("name", levellabels[1,`i'])
@@ -71,7 +85,7 @@ forvalues i = 1/`levels'{
 save "C:\Program Files\Stata11\ado\base\t\TEMP outtable master.dta", replace
 restore
 }
-*for each level, generate summary stats of each subtest	
+{/* 2. Generate summary statistics for each subpopulation (mean, standard error, sample count). */
 forvalues j=1/`levels'{
 	mata: st_local("name", levellabels[1,`j'])
 	forvalues i=1/`varcount'{
@@ -132,20 +146,26 @@ forvalues j=1/`levels'{
 		restore
 	}
 }
-
+}
+{/* 3. Squeeze the master */
 preserve
 quietly: use "C:\Program Files\Stata11\ado\base\t\TEMP outtable master.dta", clear
 quietly: compress
 sort `by'
-if "`filetype'" != ".dta"{
-	quietly: save `"`to'.dta"', replace
+}
+{/* 4. Saving the data */
+if "`filetype'" != ".csv"{
+	quietly: save `"`to'`type'"', replace
 }
 	else {
 		quietly: outsheet using `"`to'.csv"', replace
 }
+}
+{/* 5. Clean up our mess */
 restore
-
 forvalues i = 1/`levels' {
 	quietly: drop level`i'
+}
+display `"To open: use "`to'`type'", clear"'
 }
 end

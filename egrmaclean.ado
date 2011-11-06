@@ -4,26 +4,69 @@
 * August 2011
 
 
-* GO ADD NUM LANG IF `s' > 17! 
-* Change`s'to "`mymac'" in -apply labels- section
-
 program define egrmaclean
-	syntax varlist , [READwords(numlist) LANGuages(str) MLEVels noUPdate hello ]
+	syntax varlist , [READwords(numlist) LANGuages(str) MLEVels noUPdate write]
 	version 11
+/*
+Table of Contents:
+	1. Goodies
+	
+	2. Import labels, test sections, and summary variables from the codebook
+		a. Declare empty matrices
+		b. Read in the codebook
+			alpha.	Copy to a local codebook
+			bravo. Read local codebook into stata matrices
+			charlie. Define label values from the codebook
+			
+	3. Prepare for cleaning
+		a. Create a variable called "placeholder" to tell egrmaclean how to order each section, and a variable
+			named "check" to store errors
+		b. Stuff the user-entered "reading words needed" into a matrix
+		c. Make a string matrix containing all the languages in the test
+		d. Fix common renpfix errors
+		
+	4. Main cleaning
+		a. Housekeeping that must be done before each new language
+		b. Cleaning and ordering the Concepts of Text variables
+		c. Cleaning individual sections
+			alpha. Determining if section exists and other preliminaries
+			bravo. Cleaning and summarizing secitons
+				ash. Clean the component variables
+				birch. Reading specific cleaning for oral reading passage and reading comprehension sections
+				cedar. Make the summary variables
+					apocalyptica. Special section for leveled sections, like add, sub, mult, div
+							america. Section summary for level 1 variables
+							britain. Label and order level 1 variables
+							canada. Section summary for level 2 variables
+							denmark. Label and order level 2 and overall variables
+					beatles. Section for non-leveled sections
+							america. Generate section summary variables
+							britain. Label and order variables
 
+	5. Create super-summary variables
+		a. Find whether the section exists in the database
+		b. Order and label the super summary variables
+	
+	6. Label demographic variables 
+	
+	7. Post-cleaning housekeeping 
+*/
 
-{/* Easter Eggs*/
-if "`hello'"!=""{
-	di in red "Hi there!"
-	di in green "Now back to work."
+{/*  1. Easter Eggs*/
+if "`write'"!=""{
+	display "1. Goodies"
 }
 if "`readwords'"=="1 1 2 3 5" | "`readwords'"=="1 1 2 3 5 8"{
 	di in red "IL FIBONACCI!"
 	di in green `"http://mathworld.wolfram.com/FibonacciNumber.html"'
 }
 }
-{/* Import codebook contents*/
-*Declare empty matrices
+{/*  2. Import codebook contents*/
+	{/*  a. Declare empty matrices */
+if "`write'"!=""{
+	display "2. Import labels, test sections, and summary variables from the codebook"
+	display ".	a. Declare empty matrices"
+}
 mata: demvars = ("","","",""\ ///
 			"","","",""\ ///
 			"","","",""\ ///
@@ -70,22 +113,33 @@ mata: varnames = demvars
 mata: labmat = demvars
 mata: ssmat = demvars
 mata: langmat = demvars /*Use this in the pre-cleaning housekeeping section*/
+}
 
-preserve 
-*Save a local copy if connected to the Z: drive*
-capture confirm file `"Z:\Task 3 EGRA\Final Databases\Codebook for EGRA & EGMA.xlsx"'
-	if !_rc & "`update'"==""{
-		import excel using "Z:\Task 3 EGRA\Final Databases\Codebook for EGRA & EGMA.xlsx", clear firstrow sheet("Demographics")
-		quietly: export excel using "C:\Program Files\Stata12\docs\Codebook for EGRA & EGMA.xlsx", sheetreplace firstrow(variables) sheet("Demographics")
-		import excel using "Z:\Task 3 EGRA\Final Databases\Codebook for EGRA & EGMA.xlsx", clear firstrow sheet("Test Sections")
-		quietly: export excel using "C:\Program Files\Stata12\docs\Codebook for EGRA & EGMA.xlsx", sheetreplace firstrow(variables) sheet("Test Sections")
-		import excel using "Z:\Task 3 EGRA\Final Databases\Codebook for EGRA & EGMA.xlsx", clear firstrow sheet("Labels")
-		quietly: export excel using "C:\Program Files\Stata12\docs\Codebook for EGRA & EGMA.xlsx", sheetreplace firstrow(variables) sheet("Labels")	
-		import excel using "Z:\Task 3 EGRA\Final Databases\Codebook for EGRA & EGMA.xlsx", clear firstrow sheet("Super Summary")
-		quietly: export excel using "C:\Program Files\Stata12\docs\Codebook for EGRA & EGMA.xlsx", sheetreplace firstrow(variables) sheet("Super Summary")	
-		di "Updated local codebook"
+	{/*  b. Read in the codebook */
+		{/*  alpha.	Copy a local codebook*/
+	if "`write'"!=""{
+		display ".	b. Read in the codebook"
+		display ".		alpha. Copy to a local codebook"
 	}
-	{/* Read excel workbook into stata matrices */
+	preserve 
+	capture confirm file `"Z:\Task 3 EGRA\Final Databases\Codebook for EGRA & EGMA.xlsx"'
+		if !_rc & "`update'"==""{
+			import excel using "Z:\Task 3 EGRA\Final Databases\Codebook for EGRA & EGMA.xlsx", clear firstrow sheet("Demographics")
+			quietly: export excel using "C:\Program Files\Stata12\docs\Codebook for EGRA & EGMA.xlsx", sheetreplace firstrow(variables) sheet("Demographics")
+			import excel using "Z:\Task 3 EGRA\Final Databases\Codebook for EGRA & EGMA.xlsx", clear firstrow sheet("Test Sections")
+			quietly: export excel using "C:\Program Files\Stata12\docs\Codebook for EGRA & EGMA.xlsx", sheetreplace firstrow(variables) sheet("Test Sections")
+			import excel using "Z:\Task 3 EGRA\Final Databases\Codebook for EGRA & EGMA.xlsx", clear firstrow sheet("Labels")
+			quietly: export excel using "C:\Program Files\Stata12\docs\Codebook for EGRA & EGMA.xlsx", sheetreplace firstrow(variables) sheet("Labels")	
+			import excel using "Z:\Task 3 EGRA\Final Databases\Codebook for EGRA & EGMA.xlsx", clear firstrow sheet("Super Summary")
+			quietly: export excel using "C:\Program Files\Stata12\docs\Codebook for EGRA & EGMA.xlsx", sheetreplace firstrow(variables) sheet("Super Summary")	
+			display "Updated local codebook"
+		}
+	}
+	
+		{/*  bravo. Read local codebook into stata matrices */
+	if "`write'"!=""{
+		display "		bravo. Read local codebook into stata matrices"
+	}
 	import excel using "C:\Program Files\Stata12\docs\Codebook for EGRA & EGMA.xlsx", clear firstrow sheet("Demographics")
 		local demsections = _N
 		forvalues i=1/4 {
@@ -147,8 +201,11 @@ capture confirm file `"Z:\Task 3 EGRA\Final Databases\Codebook for EGRA & EGMA.x
 		}	
 	restore
 	}
-	{/* Define Label Values*/
-	*Create labels from matrix labmat
+
+		{/*  charlie. Define label values from the codebook */
+	if "`write'"!=""{
+		display "		charlie. Define label values from the codebook"
+	}
 	forvalues i=1/`labsections'{
 		mata: st_local("label", labmat[`i',2])
 		mata: st_local("labelname", labmat[`i',1])
@@ -169,81 +226,108 @@ capture confirm file `"Z:\Task 3 EGRA\Final Databases\Codebook for EGRA & EGMA.x
 	}
 
 }
-{/* Pre-cleaning housekeeping*/
-*Create a variable called placeholder to tell egrmaclean how to order each section
-capture confirm variable placeholder
-	if _rc{
-		quietly: gen placeholder = .
-	}
-order placeholder, first
-
-if "`readwords'"!=""{
-	*Determine the length of each section
-	local numlength = wordcount("`readwords'")
-
-	* Find the length of the reading word requirement list (readwords) and then  put that list into a matrix.
-	local readword ""
-	forvalues i = 1/`numlength' {
-		local testname : word `i' of `readwords'
-		local readword "`readword'`testname',"
-	}
-	matrix input read_word_needed = (`readword'0)  /* Needed a 0 to make a matrix, 0 is a placeholder to fill the last element. */
 }
-
-local langlength = 1 /*Even if the user doesn't specify additional languages, the test still has one */ 
-if "`languages'"!=""{
-	*Determine how many languages there are and save them in a matrix
-	local langlength = 1 + wordcount("`languages'")
-	forvalues i = 1/`langlength' {
-		local j = `i'+1
-		local testname : word `i' of `languages'
-		mata: langmat[`j',1] = "`testname'"
+{/*  3. Pre-cleaning housekeeping*/
+	{/*  a.  Create placeholder */
+	if "`write'"!=""{
+		display "3. Prepare for cleaning"
+		display `".	a. Create a variable called "placeholder" to tell egrmaclean how to order each section, and a variable named "check" to store errors"'
 	}
-}
+	capture confirm variable placeholder
+		if _rc{
+			quietly: gen placeholder = .
+		}
+	order placeholder, first
+	
+	*A string that will store the "nonboolean" warning
+	local check ""
+	}
+	{/*  b.  "Reading words needed" matrix */
+	if "`write'"!=""{
+		display `".	b. Stuff the user-entered "reading words needed" into a matrix"'
+	}
+	if "`readwords'"!=""{
+		local numlength = wordcount("`readwords'")
 
-*A string that will store the "nonboolean" warning
-local check ""
+		*length of the reading word requirement list = readwords
+		local readword ""
+		forvalues i = 1/`numlength' {
+			local testname : word `i' of `readwords'
+			local readword "`readword'`testname',"
+		}
+		matrix input read_word_needed = (`readword'0)  /* 0 is a placeholder to fill the last element. */
+	}
+	}
+	{/*  c.  Make a language matrix */
+	if "`write'"!=""{
+		display "	c. Make a string matrix containing all the languages in the test"
+	}
+	local langlength = 1 /*Even if the user doesn't specify additional languages, the test still has the main one */ 
+	if "`languages'"!=""{
+		*Determine how many languages there are and save them in a matrix
+		local langlength = 1 + wordcount("`languages'")
+		forvalues i = 1/`langlength' {
+			local j = `i'+1
+			local testname : word `i' of `languages'
+			mata: langmat[`j',1] = "`testname'"
+		}
+	}
+	}
 
-*Fix common renpfix errors
-forvalues langnum = 1/`langlength'{
-	mata: st_local("lang", langmat[`langnum',1])
-	foreach j in "01" "1" {
-		capture confirm variable `lang'oral_read_word`j'
-			if !_rc{
-				renpfix `lang'oral_read_word `lang'oral_read
-			}
-		capture confirm variable `lang'unfam_word`j'
-			if !_rc{
-				renpfix `lang'unfam_word `lang'invent_word
-			}
-		capture confirm variable `lang'addition`j'
-			if !_rc{
-				renpfix `lang'addition `lang'add
-			}
-		capture confirm variable `lang'subtract`j'
-			if !_rc{
-				renpfix `lang'subtract `lang'sub
-			}
-		capture confirm variable `lang'subtraction`j'
-			if !_rc{
-				renpfix `lang'subtraction `lang'sub
-			}
-		capture confirm variable `lang'miss_dig`j'
-			if !_rc{
-				renpfix `lang'miss_dig `lang'miss_num
+
+	{/*  d.  Fix common renpfix errors */
+	if "`write'"!=""{
+		display ".	d. Fix common renpfix errors"
+	}
+	forvalues langnum = 1/`langlength'{
+		mata: st_local("lang", langmat[`langnum',1])
+		foreach j in "01" "1" {
+			capture confirm variable `lang'oral_read_word`j'
+				if !_rc{
+					renpfix `lang'oral_read_word `lang'oral_read
+				}
+			capture confirm variable `lang'unfam_word`j'
+				if !_rc{
+					renpfix `lang'unfam_word `lang'invent_word
+				}
+			capture confirm variable `lang'addition`j'
+				if !_rc{
+					renpfix `lang'addition `lang'add
+				}
+			capture confirm variable `lang'subtract`j'
+				if !_rc{
+					renpfix `lang'subtract `lang'sub
+				}
+			capture confirm variable `lang'subtraction`j'
+				if !_rc{
+					renpfix `lang'subtraction `lang'sub
+				}
+			capture confirm variable `lang'miss_dig`j'
+				if !_rc{
+					renpfix `lang'miss_dig `lang'miss_num
+				}
 			}
 		}
 	}
-}
-
+	}
+{/*  4,5,6 are in the language loop */
 forvalues langnum = `langlength'(-1)1{
-	{/* Main cleaning */
+	{/*  4. Main cleaning */
+		{/*  a. Housekeeping */
+		if "`write'"!=""{
+			display "4. Main cleaning"
+			display ".	a. Housekeeping that must be done before each new language"
+		}
 		order placeholder
 		
 		* Define language
 		mata: st_local("lang", langmat[`langnum',1])
 		di "`lang'"
-		{/* Cleaning and ordering the Concepts of Text variables. */
+		}
+		{/*  b. Concepts of Text */
+		if "`write'"!=""{
+			display ".	b. Cleaning and ordering the Concepts of Text variables"
+		}
 		capture confirm variable cot_location
 			if !_rc {
 				label variable cot_location "Does the child put his/her finger on the top left letter?"
@@ -265,10 +349,13 @@ forvalues langnum = `langlength'(-1)1{
 				order cot_location cot_direction cot_next_line, b(placeholder)		
 			}
 		}
-
-		
-	forvalues s = 2/`possiblesections' {
-		{/* Cleaning item-level variables */
+		{/*  c. Section cleaning */
+		forvalues s = 2/`possiblesections' {
+			{/*  alpha. Determining if section exists and other preliminaries */
+			if "`write'"!=""{
+				display ".	c. Cleaning individual sections"
+				display ".		alpha. Determining if section exists and other preliminaries"
+			}
 			local tested = 0
 			mata: st_local("mymac", varnames[`s',1])
 			mata: st_local("section", varnames[`s',2])
@@ -298,9 +385,15 @@ forvalues langnum = `langlength'(-1)1{
 				}
 			}
 		}
+			{/*  bravo. Cleaning and summarizing secitons */
 		if `length' != 0 {
 			display "Starting `lang'`section'. Length: `length'"
-			** Clean the component variables
+				{/*  ash. Clean the component variables */
+			if "`write'"!=""{
+				display ".		bravo. leaning and summarizing secitons"
+				display ".			ash. Clean the component variables"
+
+			}
 			forvalues i=1/`length' {
 				quietly: recode `lang'`mymac'`i' (9=.) (99=.) (8=0) (3=0) (-1=.) (11=1)
 				quietly: summarize(`lang'`mymac'`i')
@@ -329,7 +422,11 @@ forvalues langnum = `langlength'(-1)1{
 					label values `lang'`mymac'`i' `seclab'
 			}
 			
-			** Reading specific cleaning for oral reading passage and reading comprehension sections
+			}
+				{/*  birch. Reading specific cleaning for oral reading passage and reading comprehension sections */
+			if "`write'"!=""{
+				display ".			birch. Clean the component variables"
+			}
 			if "`mymac'"=="read_comp" & "`readwords'"!=""{
 				local j=0
 				* Redo this just in case reading is done before oral */	
@@ -365,11 +462,16 @@ forvalues langnum = `langlength'(-1)1{
 					quietly: recode read_comp`i' (3=.) (2=.) (1=.) (0=.) if `lang'oral_read_attempted < `word_needed'
 				}
 			}
-			{/*Make the summary variables*/
-				if ("`mymac'"=="add" | "`mymac'"=="sub" | "`mymac'"=="mult" | "`mymac'"=="div") & ///
-				(`length' > 10 & "`mlevels'" == "mlevels" & "`lang'"=="") { /*Special section for leveled sections, like add, sub, mult, div */
+			}
+				{/*  cedar. Make the summary variables*/
+					/*  apocalyptica. Special section for leveled sections, like add, sub, mult, div */ if ("`mymac'"=="add" | "`mymac'"=="sub" | "`mymac'"=="mult" | "`mymac'"=="div") & ///
+																						(`length' > 10 & "`mlevels'" == "mlevels" & "`lang'"=="") { /*Alex, I'm not sure about this length statement */	
 
-					{/* Section summary for level 1 */
+					{/*  america. Section summary for level 1 variables*/
+						if "`write'"!=""{
+							display ".				apocalyptica. Special section for leveled sections, like add, sub, mult, div"
+							display ".					america. Section summary for level 1 variables"
+						}
 						capture confirm variable l1`mymac'_score
 						if !_rc { 
 							drop l1`mymac'_score
@@ -387,6 +489,13 @@ forvalues langnum = `langlength'(-1)1{
 							drop l1`mymac'_score_pcnt
 						}
 						quietly: gen l1`mymac'_score_pcnt=l1`mymac'_score/10
+						quietly: summarize l1`mymac'_score_pcnt
+							if(r(max)>1 & r(max)<.) {
+								display in red "QC:l1`mymac'_score_pcnt is greater than 100%"
+							}
+							if r(max)<1  {
+								display in red "QC:l1`mymac'_score_pcnt no student scored 100%"
+							}
 					
 						capture confirm variable l1`mymac'_score_zero
 						if !_rc { 
@@ -400,7 +509,10 @@ forvalues langnum = `langlength'(-1)1{
 						}
 						quietly: gen l1`mymac'_attempted_pcnt=l1`mymac'_score/l1`mymac'_attempted 
 					}
-					{/* Label and order level 1 variables */
+					{/*  britain. Label and order level 1 variables */
+						if "`write'"!=""{
+							display ".					britain. Label and order level 1 variables"
+						}
 						*Label summary variables
 						label variable l1`mymac'_score "Total correct questions at the section end?"
 						label variable l1`mymac'_score_pcnt "Total percentage of all level 1 `section' questions correct at the section end?"
@@ -426,7 +538,10 @@ forvalues langnum = `langlength'(-1)1{
 							}
 						}
 					}
-					{/* Section summary for l2*/
+					{/*  canada. Section summary for level 2 variables*/
+					if "`write'"!=""{
+							display ".					canada. Section summary for level 2 variables"
+					}
 					capture confirm variable l2`mymac'_score
 						if !_rc { 
 							drop l2`mymac'_score
@@ -444,6 +559,13 @@ forvalues langnum = `langlength'(-1)1{
 							drop l2`mymac'_score_pcnt
 						}
 						quietly: gen l2`mymac'_score_pcnt=l2`mymac'_score/`length'
+						quietly: summarize l2`mymac'_score_pcnt
+							if(r(max)>1 & r(max)<.) {
+								display in red "QC:l2`mymac'_score_pcnt is greater than 100%"
+							}
+							if r(max)<1  {
+								display in red "QC:l2`mymac'_score_pcnt no student scored 100%"
+							}
 					
 						capture confirm variable l2`mymac'_score_zero
 						if !_rc { 
@@ -457,7 +579,10 @@ forvalues langnum = `langlength'(-1)1{
 						}
 						quietly: gen l2`mymac'_attempted_pcnt=l2`mymac'_score/l2`mymac'_attempted 
 					}
-					{/* Label and order level 2 and overall variables*/
+					{/*  denmark. Label and order level 2 and overall variables*/
+						if "`write'"!=""{
+								display ".					denmark. Label and order level 2 and overall variables"
+						}	
 						*Label summary variables
 						label variable l2`mymac'_score "Total correct questions at the section end?"
 						label variable l2`mymac'_score_pcnt "Total percentage of all level 2`section' questions correct at the section end?"
@@ -490,19 +615,25 @@ forvalues langnum = `langlength'(-1)1{
 						}
 					}
 				}
-				else {
-					{/*Generate section summary variables*/
+					/*  beatles. Section for non-leveled sections */  else {
+					{/*  america. Generate section summary variables*/
+						if "`write'"!=""{
+							display ".				beatles. Section for non-leveled sections"
+							display ".					america. Generate section summary variables"
+						}
 						*Drop score if it already exists
 						capture confirm variable `lang'`mymac'_score
 						if !_rc { 
 							drop `lang'`mymac'_score
 						}
 						*Special generation for dictation sections
-						if "`mymac'"!="dict" | "`mymac'"!="invent_dict" | "`mymac'"=="read_comp" | "`mymac'"=="list_comp"{
+						if "`seclab'"=="compdict"{
 							quietly: egen `lang'`mymac'_score1 = anycount(`lang'`mymac'1-`lang'`mymac'`length'), v(1)
 							quietly: egen `lang'`mymac'_score2 = anycount(`lang'`mymac'1-`lang'`mymac'`length'), v(2)
 							quietly: gen `lang'`mymac'_score=`lang'`mymac'_score1+(`lang'`mymac'_score2)/2
 							drop `lang'`mymac'_score1 `lang'`mymac'_score2
+							** If the section is missing, this should take the 0's returned by -anycount- and change them to missing.
+							quietly: recode `lang'`mymac'_score (0=.) if missing(`lang'`mymac'1-`lang'`mymac'`length') 
 						}
 						else{
 							quietly: egen `lang'`mymac'_score=rowtotal(`lang'`mymac'1-`lang'`mymac'`length'), missing 
@@ -522,6 +653,13 @@ forvalues langnum = `langlength'(-1)1{
 							drop `lang'`mymac'_score_pcnt
 						}
 						quietly: gen `lang'`mymac'_score_pcnt=`lang'`mymac'_score/`length'
+						quietly: summarize `lang'`mymac'_score_pcnt
+							if(r(max)>1 & r(max)<.) {
+								display in red "QC:`lang'`mymac'_score_pcnt is greater than 100%"
+							}
+							if r(max)<1  {
+								display in red "QC:`lang'`mymac'_score_pcnt no student scored 100%"
+							}
 					
 						*Zero Score
 						capture confirm variable `lang'`mymac'_score_zero
@@ -538,14 +676,17 @@ forvalues langnum = `langlength'(-1)1{
 						quietly: gen `lang'`mymac'_attempted_pcnt=`lang'`mymac'_score/`lang'`mymac'_attempted 
 					}
 					
-					{/*Label and order variables*/ 
+					{/*  britain. Label and order variables*/ 
+						if "`write'"!=""{
+							display ".					britain. Generate section summary variables"
+						}
 						*Label summary variables
-						label variable `lang'`mymac'_score "Total correct questions at the section end?"
-						label variable `lang'`mymac'_score_pcnt "Total percentage of all `lang'`section' questions correct at the section end?"
-						label variable `lang'`mymac'_score_zero "Proportion of students with zero `lang'`section' questions correct."
+						label variable `lang'`mymac'_score "Total correct `lang'`section' questions."
+						label variable `lang'`mymac'_score_pcnt "Percentage of `lang'`section' questions correct."
+						label variable `lang'`mymac'_score_zero "Student scored zero on `lang'`section' section."
 						label values `mymac'_score_zero zeroscores
-						label variable `lang'`mymac'_attempted "Number of `lang'`section' questions that were attempted."
-						label variable `lang'`mymac'_attempted_pcnt "Percentage correct of `lang'`section' questions that were attempted."
+						label variable `lang'`mymac'_attempted "Number of `lang'`section' questions attempted."
+						label variable `lang'`mymac'_attempted_pcnt "Percentage of attempted `lang'`section' questions correct."
 						
 						*Order
 						capture confirm variable `lang'`mymac'_autostop
@@ -581,13 +722,15 @@ forvalues langnum = `langlength'(-1)1{
 		}
 	}
 	}
-
-
-
-	{/* Create super-summary variables */
+	}
+	}
+	{/*  5. Create super-summary variables */
 	order placeholder
-	
-	*Find whether the section exists in the database
+	{/*  a. Find whether the section exists in the database*/
+	if "`write'"!=""{
+			display "5. Create super-summary variables"
+			display ".	a. Find whether the section exists in the database"
+	}
 	capture confirm variable `lang'read_comp_score_pcnt
 		if !_rc { 
 				*If needed, get rid of an summary variable
@@ -607,6 +750,10 @@ forvalues langnum = `langlength'(-1)1{
 					drop `lang'orf
 				}
 				quietly: gen `lang'orf=`lang'oral_read_score/(1-(`lang'oral_read_time_remain/60))
+				quietly: summarize `lang'orf
+				if(r(max)>150 & r(max)<.) {
+					display in red "QC:`lang'orf is greater than 150 word per minute"
+				}
 	}
 		
 	capture confirm variable `lang'invent_word_time_remain
@@ -616,6 +763,10 @@ forvalues langnum = `langlength'(-1)1{
 					drop `lang'cnonwpm
 				}
 				quietly: gen `lang'cnonwpm=`lang'invent_word_score/(1-(`lang'invent_word_time_remain/60))
+				quietly: summarize `lang'cnonwpm
+				if(r(max)>150 & r(max)<.) {
+					display in red "QC:`lang'cnonwpm is greater than 150 invented word per minute"
+				}
 	}
 
 	capture confirm variable `lang'fam_word_time_remain
@@ -625,6 +776,10 @@ forvalues langnum = `langlength'(-1)1{
 					drop `lang'cwpm
 				}
 				quietly: gen `lang'cwpm=`lang'fam_word_score/(1-(`lang'fam_word_time_remain/60))
+				quietly: summarize `lang'cwpm
+				if(r(max)>150 & r(max)<.) {
+					display in red "QC:`lang'cwpm is greater than 150 familiar word per minute"
+				}
 		}
 			
 	capture confirm variable `lang'letter_time_remain
@@ -634,8 +789,10 @@ forvalues langnum = `langlength'(-1)1{
 					drop `lang'clpm
 				}
 				quietly: gen `lang'clpm=`lang'letter_score/(1-(`lang'letter_time_remain/60))
-				label variable `lang'clpm "Correct Letters Per Minute"
-				order `lang'clpm
+				quietly: summarize `lang'clpm
+				if(r(max)>150 & r(max)<.) {
+					display in red "QC:`lang'clpm is greater than 150 letters per minute"
+				}
 		}
 	
 	capture confirm variable `lang'letter_sound_time_remain
@@ -645,10 +802,18 @@ forvalues langnum = `langlength'(-1)1{
 					drop `lang'clspm
 				}
 				quietly: gen `lang'clspm=`lang'letter_sound_score/(1-(`lang'letter_sound_time_remain/60))
+				quietly: summarize `lang'clspm
+				if(r(max)>150 & r(max)<.) {
+					display in red "QC:`lang'clspm is greater than 150 letter sounds per minute"
+				}
 		}
-		
-	*Order and label the super summary variables
-	forvalues i =`sssections'(-1)1{
+	}
+	
+	{/*  b. Order and label the super summary variables */
+	if "`write'"!=""{
+			display ".	b. Order and label the super summary variables"
+	}
+	forvalues i =1(1)`sssections'{
 		mata: st_local("varname", ssmat[`i',1])
 		mata: st_local("varlab", ssmat[`i',2])
 		capture confirm variable `lang'`varname'
@@ -658,8 +823,12 @@ forvalues langnum = `langlength'(-1)1{
 
 		}
 	}
-	}	
-	{/* Label demographic variables */
+	}
+	}
+	{/*  6. Label demographic variables */
+	if "`write'"!=""{
+			display "6. Label demographic variables"
+	}
 	order placeholder
 	
 	forvalues s = 1/`demsections' {
@@ -677,10 +846,14 @@ forvalues langnum = `langlength'(-1)1{
 	}
 	}
 }
-{/* Post-cleaning housekeeping */
+}
+{/*  7. Post-cleaning housekeeping */
+if "`write'"!=""{
+	display "7. Post-cleaning housekeeping "
+}
 quietly: drop placeholder
 if "`check'" != "" {
-	di in red "Check sections for nonboolean values:`check'"
+	display in red "Check sections for nonboolean values:`check'"
 }
 }
 
